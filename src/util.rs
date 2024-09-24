@@ -1,8 +1,9 @@
-use bevy::prelude::*;
+use bevy::{math::DVec3, prelude::*};
+use big_space::{GridCell, ReferenceFrame};
 
 const EPSILON: f32 = 0.001;
 
-pub fn calculate_from_translation_and_focus(translation: Vec3, focus: Vec3) -> (f32, f32, f32) {
+pub fn calculate_from_translation_and_focus(translation: DVec3, focus: DVec3) -> (f32, f32, f32) {
     let comp_vec = translation - focus;
     let mut radius = comp_vec.length();
     if radius == 0.0 {
@@ -14,7 +15,7 @@ pub fn calculate_from_translation_and_focus(translation: Vec3, focus: Vec3) -> (
         (comp_vec.z / (comp_vec.x.powi(2) + comp_vec.z.powi(2)).sqrt()).acos()
     };
     let pitch = (comp_vec.y / radius).asin();
-    (yaw, pitch, radius)
+    (yaw as f32, pitch as f32, radius as f32)
 }
 
 /// Update `transform` based on yaw, pitch, and the camera's focus and radius
@@ -23,7 +24,9 @@ pub fn update_orbit_transform(
     pitch: f32,
     mut radius: f32,
     focus: Vec3,
+    reference_frame: &ReferenceFrame<i64>,
     transform: &mut Transform,
+    grid_cell: &mut GridCell<i64>,
     projection: &mut Projection,
 ) {
     let mut new_transform = Transform::IDENTITY;
@@ -33,7 +36,13 @@ pub fn update_orbit_transform(
         radius = (p.near + p.far) / 2.0;
     }
     new_transform.rotation *= Quat::from_rotation_y(yaw) * Quat::from_rotation_x(-pitch);
-    new_transform.translation += focus + new_transform.rotation * Vec3::new(0.0, 0.0, radius);
+
+    let raw_position = focus + new_transform.rotation * Vec3::new(0.0, 0.0, radius);
+    let (new_grid_cell, new_position) = reference_frame.imprecise_translation_to_grid(raw_position);
+
+    new_transform.translation += new_position;
+
+    *grid_cell = new_grid_cell;
     *transform = new_transform;
 }
 

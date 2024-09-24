@@ -10,6 +10,7 @@ use bevy::transform::TransformSystem;
 use bevy::window::{PrimaryWindow, WindowRef};
 #[cfg(feature = "bevy_egui")]
 use bevy_egui::EguiSet;
+use big_space::{GridCell, ReferenceFrame};
 
 #[cfg(feature = "bevy_egui")]
 pub use crate::egui::{EguiFocusIncludesHover, EguiWantsFocus};
@@ -405,10 +406,14 @@ fn pan_orbit_camera(
     active_cam: Res<ActiveCameraData>,
     mouse_key_tracker: Res<MouseKeyTracker>,
     touch_tracker: Res<TouchTracker>,
-    mut orbit_cameras: Query<(Entity, &mut PanOrbitCamera, &mut Transform, &mut Projection)>,
+    mut orbit_cameras: Query<(Entity, &Parent, &mut PanOrbitCamera, &mut Transform, &mut Projection, &mut GridCell<i64>)>,
+    q_reference_frame: Query<&ReferenceFrame<i64>>,
     time: Res<Time>,
 ) {
-    for (entity, mut pan_orbit, mut transform, mut projection) in orbit_cameras.iter_mut() {
+    for (entity, parent, mut pan_orbit, mut transform, mut projection, mut grid_cell) in orbit_cameras.iter_mut() {
+        let reference_frame = q_reference_frame.get(parent.get()).unwrap();
+        let real_transform = reference_frame.grid_position_double(&grid_cell, &transform);
+
         // Closures that apply limits to the yaw, pitch, and zoom values
         let apply_zoom_limits = {
             let zoom_upper_limit = pan_orbit.zoom_upper_limit;
@@ -436,7 +441,7 @@ fn pan_orbit_camera(
             // these explicitly, this calculation is wasted, but that's okay since it will only run
             // once on init.
             let (yaw, pitch, radius) =
-                util::calculate_from_translation_and_focus(transform.translation, pan_orbit.focus);
+                util::calculate_from_translation_and_focus(real_transform, pan_orbit.focus.into());
             let &mut mut yaw = pan_orbit.yaw.get_or_insert(yaw);
             let &mut mut pitch = pan_orbit.pitch.get_or_insert(pitch);
             let &mut mut radius = pan_orbit.radius.get_or_insert(radius);
@@ -460,7 +465,9 @@ fn pan_orbit_camera(
                 pitch,
                 radius,
                 pan_orbit.focus,
+                reference_frame,
                 &mut transform,
+                &mut grid_cell,
                 &mut projection,
             );
 
@@ -650,7 +657,9 @@ fn pan_orbit_camera(
                     new_pitch,
                     new_radius,
                     new_focus,
+                    reference_frame,
                     &mut transform,
+                    &mut grid_cell,
                     &mut projection,
                 );
 
