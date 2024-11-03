@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{math::DVec3, prelude::*};
 
 use big_space::GridCell;
 use big_space::ReferenceFrame;
