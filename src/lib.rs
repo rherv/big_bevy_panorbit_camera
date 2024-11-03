@@ -18,6 +18,9 @@ pub use crate::touch::TouchControls;
 use crate::touch::{touch_tracker, TouchGestures, TouchTracker};
 use crate::traits::OptionalClamp;
 
+use big_space::GridCell;
+use big_space::ReferenceFrame;
+
 #[cfg(feature = "bevy_egui")]
 mod egui;
 mod input;
