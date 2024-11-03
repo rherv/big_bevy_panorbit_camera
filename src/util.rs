@@ -1,5 +1,8 @@
 use bevy::prelude::*;
 
+use big_space::GridCell;
+use big_space::ReferenceFrame;
+
 const EPSILON: f32 = 0.001;
 
 pub fn calculate_from_translation_and_focus(translation: Vec3, focus: Vec3) -> (f32, f32, f32) {
