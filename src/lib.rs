@@ -413,6 +413,9 @@ fn pan_orbit_camera(
     q_reference_frame: Query<&ReferenceFrame<i64>>,
     time: Res<Time>,
 ) {
+    if orbit_cameras.is_empty() {
+        println!("this shit is empty");
+    }
     for (entity, parent, mut pan_orbit, mut transform, mut projection, mut grid_cell) in orbit_cameras.iter_mut() {
         let reference_frame = q_reference_frame.get(parent.get()).unwrap();
         let real_transform = reference_frame.grid_position_double(&grid_cell, &transform);
