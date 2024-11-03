@@ -18,6 +18,7 @@ pub fn calculate_from_translation_and_focus(translation: Vec3, focus: Vec3) -> (
 }
 
 /// Update `transform` based on yaw, pitch, and the camera's focus and radius
+/*
 pub fn update_orbit_transform(
     yaw: f32,
     pitch: f32,
@@ -34,6 +35,33 @@ pub fn update_orbit_transform(
     }
     new_transform.rotation *= Quat::from_rotation_y(yaw) * Quat::from_rotation_x(-pitch);
     new_transform.translation += focus + new_transform.rotation * Vec3::new(0.0, 0.0, radius);
+    *transform = new_transform;
+}
+*/
+pub fn update_orbit_transform(
+    yaw: f32,
+    pitch: f32,
+    mut radius: f32,
+    focus: Vec3,
+    reference_frame: &ReferenceFrame<i64>,
+    transform: &mut Transform,
+    grid_cell: &mut GridCell<i64>,
+    projection: &mut Projection,
+) {
+    let mut new_transform = Transform::IDENTITY;
+    if let Projection::Orthographic(ref mut p) = *projection {
+        p.scale = radius;
+        // (near + far) / 2.0 ensures that objects near `focus` are not clipped
+        radius = (p.near + p.far) / 2.0;
+    }
+    new_transform.rotation *= Quat::from_rotation_y(yaw) * Quat::from_rotation_x(-pitch);
+
+    let raw_position = focus + new_transform.rotation * Vec3::new(0.0, 0.0, radius);
+    let (new_grid_cell, new_position) = reference_frame.imprecise_translation_to_grid(raw_position);
+
+    new_transform.translation += new_position;
+
+    *grid_cell = new_grid_cell;
     *transform = new_transform;
 }
 
