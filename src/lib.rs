@@ -410,6 +410,7 @@ fn pan_orbit_camera(
     touch_tracker: Res<TouchTracker>,
     // mut orbit_cameras: Query<(Entity, &mut PanOrbitCamera, &mut Transform, &mut Projection)>,
     mut orbit_cameras: Query<(Entity, &Parent, &mut PanOrbitCamera, &mut Transform, &mut Projection, &mut GridCell<i64>)>,
+    q_reference_frame: Query<&ReferenceFrame<i64>>,
     time: Res<Time>,
 ) {
     for (entity, parent, mut pan_orbit, mut transform, mut projection, mut grid_cell) in orbit_cameras.iter_mut() {
