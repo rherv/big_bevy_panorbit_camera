@@ -405,10 +405,14 @@ fn pan_orbit_camera(
     active_cam: Res<ActiveCameraData>,
     mouse_key_tracker: Res<MouseKeyTracker>,
     touch_tracker: Res<TouchTracker>,
-    mut orbit_cameras: Query<(Entity, &mut PanOrbitCamera, &mut Transform, &mut Projection)>,
+    // mut orbit_cameras: Query<(Entity, &mut PanOrbitCamera, &mut Transform, &mut Projection)>,
+    mut orbit_cameras: Query<(Entity, &Parent, &mut PanOrbitCamera, &mut Transform, &mut Projection, &mut GridCell<i64>)>,
     time: Res<Time>,
 ) {
-    for (entity, mut pan_orbit, mut transform, mut projection) in orbit_cameras.iter_mut() {
+    for (entity, parent, mut pan_orbit, mut transform, mut projection, mut grid_cell) in orbit_cameras.iter_mut() {
+        let reference_frame = q_reference_frame.get(parent.get()).unwrap();
+        let real_transform = reference_frame.grid_position_double(&grid_cell, &transform);
+    //for (entity, mut pan_orbit, mut transform, mut projection) in orbit_cameras.iter_mut() {
         // Closures that apply limits to the yaw, pitch, and zoom values
         let apply_zoom_limits = {
             let zoom_upper_limit = pan_orbit.zoom_upper_limit;
@@ -435,8 +439,12 @@ fn pan_orbit_camera(
             // Calculate yaw, pitch, and radius from the camera's position. If user sets all
             // these explicitly, this calculation is wasted, but that's okay since it will only run
             // once on init.
+            /*
             let (yaw, pitch, radius) =
                 util::calculate_from_translation_and_focus(transform.translation, pan_orbit.focus);
+            */
+            let (yaw, pitch, radius) =
+                util::calculate_from_translation_and_focus(real_transform, pan_orbit.focus.into());
             let &mut mut yaw = pan_orbit.yaw.get_or_insert(yaw);
             let &mut mut pitch = pan_orbit.pitch.get_or_insert(pitch);
             let &mut mut radius = pan_orbit.radius.get_or_insert(radius);
@@ -455,12 +463,25 @@ fn pan_orbit_camera(
             pan_orbit.target_radius = radius;
             pan_orbit.target_focus = pan_orbit.focus;
 
+            /*
             util::update_orbit_transform(
                 yaw,
                 pitch,
                 radius,
                 pan_orbit.focus,
                 &mut transform,
+                &mut projection,
+            );
+            */
+
+            util::update_orbit_transform(
+                yaw,
+                pitch,
+                radius,
+                pan_orbit.focus,
+                reference_frame,
+                &mut transform,
+                &mut grid_cell,
                 &mut projection,
             );
 
@@ -645,12 +666,24 @@ fn pan_orbit_camera(
                     time.delta_seconds(),
                 );
 
+                /*
                 util::update_orbit_transform(
                     new_yaw,
                     new_pitch,
                     new_radius,
                     new_focus,
                     &mut transform,
+                    &mut projection,
+                );
+                */
+                util::update_orbit_transform(
+                    new_yaw,
+                    new_pitch,
+                    new_radius,
+                    new_focus,
+                    reference_frame,
+                    &mut transform,
+                    &mut grid_cell,
                     &mut projection,
                 );
 
