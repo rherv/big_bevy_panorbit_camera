@@ -1,5 +1,5 @@
 [package]
-name = "bevy_panorbit_camera"
+name = "big_bevy_panorbit_camera"
 version = "0.19.5"
 authors = ["Plonq"]
 edition = "2021"
